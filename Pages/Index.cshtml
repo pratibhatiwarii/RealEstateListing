@@ -1,0 +1,184 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div>
+    <label class="display-4">List a Property</label>
+    <table class="table table-hover table-info table-bordered">
+        <thead>
+            <tr>
+                <th scope="col">Property Name</th>
+                <th scope="col">Address</th>
+                <th scope="col">Built in</th>
+                <th scope="col">Owner</th>
+                <th scope="col">Price</th>
+            </tr>
+        </thead>
+        <tbody class="create-property">
+            <tr>
+                <td><input type="text" id="propertyName" placeholder="Property Name" /></td>
+                <td><input type="text" id="address" placeholder="Address/Area" /></td>
+                <td><input type="date" id="builtDate" placeholder="Built in Date" /></td>
+                <td><input type="text" id="owner" placeholder="Owned By" /></td>
+                <td><input type="text" id="price" placeholder="Price" /></td>
+                <td><button id="btn-create-property" class="btn btn-primary">Enlist</button></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<div>
+    <ul id="propertylist"></ul>
+</div>
+<div>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Address</th>
+                <th scope="col">Built In</th>
+                <th scope="col">Available</th>
+                <th scope="col">Price</th>
+            </tr>
+        </thead>
+        <tbody class="listings-display">
+        </tbody>
+    </table>
+
+</div>
+
+@section scripts
+{
+    <script>
+
+        $(document).ready(function () {
+            // Creating a Property
+            function createProperty() {
+
+                var requestData = {
+
+                    name: $("#propertyName").val(),
+                    available: true,
+                    builtin: $("#builtDate").val(),
+                    price: parseFloat($("#price").val()),
+                    owner: $("#owner").val(),
+                    address: $("#address").val()
+                };
+
+                $.ajax({
+                    url: "/api/properties",
+                    dataType: "json",
+                    contentType: "application/json",
+                    data: JSON.stringify(requestData),
+                    method: "POST"
+
+                }).done(function () {
+                    loadData();
+
+                }).fail(function (error) {
+                    alert("Something went wrong");
+                    console.log(error);
+                })
+
+            }
+
+
+            function deleteProperty(id) {
+                $.ajax({
+                    url: '/api/properties/' + id,
+                    dataType: 'json',
+                    contentType: 'application/json',
+                    method: 'DELETE',
+                }).done(function (responseData, status, xhr) {
+                    loadData(); // RELOAD THE BOOK DATA                
+                }).fail(function (xhr, status, error) {
+                    alert("There was an error deleting your book");
+                });
+            }
+
+
+
+            function loadData() {
+                $.ajax({
+                    url: "/api/properties",
+                    dataType: 'json',
+                    contentType: 'application/json',
+                    method: 'GET'
+                }).done(function (responseJSON, status, xhr) {
+                    buildPropertyList(responseJSON);
+                }).fail(function (xhr, status, error) {
+                    alert("There was an error retrieving the data");
+                });
+            }
+
+            function updateAvailability(properties) {
+                $.each(properties, function (index, item) {
+                    var requestData = {
+
+                        name: item.name,
+                        available: false,
+                        builtin: item.builtin,
+                        price: item.price,
+                        owner: item.owner,
+                        address: item.address
+                    };
+
+                    $.ajax({
+                        url: "/api/properties/" + id,
+                        dataType: 'json',
+                        contentType: 'application/json',
+                        method: 'PUT'
+                    }).done(function (responseJSON, status, xhr) {
+                        loadData();
+                    }).fail(function (xhr, status, error) {
+                        alert("There was an error retrieving the data");
+                    });
+                });
+            }
+                    
+        
+
+            function buildPropertyList(properties) {
+                $("#propertylist").empty();
+                $.each(properties, function (index, item) {
+                    var li = $('<li property-id="' + item.id + '"></li>');
+                    $(li).text(item.name + ' - ' + item.price + ' ');
+                    $(li).append('<a href="#" class="pull-right property-delete">delete</a>' + " " + `<input type="checkbox" class="checkbox" ${item.available ? `checked = "checked"` : ""} disabled="true" />` + '<a href = "#" class= "pull-right property-edit" > edit</a>')
+                    $("#propertylist").append(li); 
+                });
+            }
+
+
+            $("#btn-create-property").click(function () {
+                createProperty();
+                loadData();
+                return false;
+            });
+
+
+            $("#propertylist").on('click', 'a.property-delete', function () {
+                
+                var id = $(this).parents("li").attr('property-id');
+                // call the delete method
+                if (confirm("Are you sure you want to delete this property")) {
+                    deleteProperty(id);
+                }
+                return false;
+            });
+
+            $("#propertylist").on('click', 'a.property-edit', function () {
+
+                var id = $(this).parents("li").attr('property-id');
+                // call the edit method
+                if (confirm("Are you sure you want to edit this property")) {
+                    updateAvailability(id);
+                }
+                return false;
+            });
+
+            loadData();
+
+        })
+    </script>
+}
